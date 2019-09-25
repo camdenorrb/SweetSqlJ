@@ -4,7 +4,7 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import me.camdenorrb.sweetsqlj.impl.Sql;
 import me.camdenorrb.sweetsqlj.impl.SqlConfig;
-import me.camdenorrb.sweetsqlj.impl.User;
+import me.camdenorrb.sweetsqlj.test.User;
 
 import java.io.File;
 
@@ -16,7 +16,7 @@ public class Test {
 		final Gson gson = new GsonBuilder().setPrettyPrinting().create();
 		final Sql sql = new Sql(SqlConfig.fromOrMake(new File("test.json"), gson));
 
-		sql.table(User.class);
+		sql.table(User.class).;
 	}
 
 }

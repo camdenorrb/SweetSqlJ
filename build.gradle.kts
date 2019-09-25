@@ -16,7 +16,7 @@ repositories {
 
 dependencies {
     compile("com.zaxxer:HikariCP:3.4.1")
-    implementation("com.github.camdenorrb:JCommons:1.0.2")
+    implementation("com.github.camdenorrb:JCommons:1.0.3")
     implementation("org.slf4j:slf4j-simple:1.7.28")
 }
 

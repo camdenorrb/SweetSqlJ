@@ -7,4 +7,9 @@ import java.lang.annotation.Target;
 
 @Target(ElementType.FIELD)
 @Retention(RetentionPolicy.RUNTIME)
-public @interface PrimaryKey {}
+public @interface PrimaryKey {
+
+	// Only can be used on fields with [Int] type
+	boolean autoIncrement() default false;
+
+}

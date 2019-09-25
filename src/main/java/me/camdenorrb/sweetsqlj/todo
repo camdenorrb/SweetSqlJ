@@ -60,9 +60,9 @@ sql.connect()
 table = sql.table(User.class, (name/foreignKeys), (foreignKeys))
 
 // Maybe queue these actions and run on another thread
-table.add(new User("ID", "Meow"))
+// table.add(new User("ID", "Meow")) (Deprecated, just use [put])
 
-table.set(new User("ID", "Meowth")) // Should check for a primary key and utilize on dupe update if so
+table.put(new User("ID", "Meowth")) // Should check for a primary key and utilize on dupe update if so
 
 table.rem(user) // Maybe add a callback
 

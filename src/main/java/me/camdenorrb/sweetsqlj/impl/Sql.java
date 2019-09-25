@@ -3,17 +3,21 @@ package me.camdenorrb.sweetsqlj.impl;
 import com.google.gson.Gson;
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
+import me.camdenorrb.jcommons.base.tryblock.TryCloseBlock;
 import me.camdenorrb.jcommons.utils.TryUtils;
-import me.camdenorrb.sweetsqlj.anno.NonSql;
 import me.camdenorrb.sweetsqlj.anno.PrimaryKey;
 import me.camdenorrb.sweetsqlj.base.Connectable;
 import sun.misc.Unsafe;
 
 import java.io.File;
 import java.lang.reflect.Field;
+import java.lang.reflect.Modifier;
+import java.sql.PreparedStatement;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
+
+import static me.camdenorrb.jcommons.utils.TryUtils.attemptOrPrintErr;
 
 
 // A SQL client
@@ -25,12 +29,23 @@ public final class Sql implements Connectable {
 
 	private final HikariConfig hikariConfig;
 
+	private final SqlFieldResolver sqlFieldResolver;
+
 
 	public Sql(final HikariConfig config) {
-		this.hikariConfig = config;
+		this(config, new SqlFieldResolver());
 	}
 
 	public Sql(final SqlConfig config) {
+		this(config, new SqlFieldResolver());
+	}
+
+	public Sql(final HikariConfig config, final SqlFieldResolver sqlFieldResolver) {
+		this.hikariConfig = config;
+		this.sqlFieldResolver = sqlFieldResolver;
+	}
+
+	public Sql(final SqlConfig config, final SqlFieldResolver sqlFieldResolver) {
 
 		final HikariConfig hikariConfig = new HikariConfig();
 
@@ -42,6 +57,7 @@ public final class Sql implements Connectable {
 		hikariConfig.addDataSourceProperty("prepStmtCacheSqlLimit", "2048");
 
 		this.hikariConfig = hikariConfig;
+		this.sqlFieldResolver = sqlFieldResolver;
 	}
 
 
@@ -71,8 +87,15 @@ public final class Sql implements Connectable {
 		return isConnected;
 	}
 
+
 	public <T> Table<T> table(final Class<T> clazz) {
 		return new Table<>(clazz);
+	}
+
+	public void use(final String statement, final TryCloseBlock<PreparedStatement> block) {
+		attemptOrPrintErr(dataSource::getConnection, (connection) ->
+			attemptOrPrintErr(() -> connection.prepareStatement(statement), block)
+		);
 	}
 
 
@@ -92,20 +115,41 @@ public final class Sql implements Connectable {
 
 		private final Field primaryKey;
 
+		private final String tableName;
+
 		private final List<Field> variables;
+
+		//CREATE TABLE IF NOT EXISTS UUIDForName (uuid CHAR(36) PRIMARY KEY NOT NULL, name VARCHAR(255) NOT NULL)
+		//"INSERT INTO UUIDForName (uuid, name) VALUES (?, ?) ON DUPLICATE KEY UPDATE name=name";
 
 
 		private Table(final Class<T> clazz) {
+			this(clazz, clazz.getSimpleName() + 's');
+		}
+
+		private Table(final Class<T> clazz, final String tableName) {
 
 			this.clazz = clazz;
+			this.tableName = tableName;
 
-		    variables = Arrays.stream(clazz.getDeclaredFields())
-				.filter(it -> !it.isAnnotationPresent(NonSql.class))
+			variables = Arrays.stream(clazz.getDeclaredFields())
+				.filter(it -> !Modifier.isTransient(it.getModifiers()))
 				.collect(Collectors.toList());
 
-		    primaryKey = variables.stream()
-			    .filter(it -> it.isAnnotationPresent(PrimaryKey.class))
-			    .findFirst().orElse(null);
+			primaryKey = variables.stream()
+				.filter(it -> it.isAnnotationPresent(PrimaryKey.class))
+				.findFirst().orElse(null);
+
+			use("CREATE TABLE IF NOT EXISTS " + tableName + typedValues() + ';', PreparedStatement::execute);
+		}
+
+
+		public void add(final T value) {
+			SqlUtils.useStatement(dataSource, "INSERT INTO " + tableName);
+		}
+
+		public FilteredTable<T> filter() {
+
 		}
 
 
@@ -126,6 +170,43 @@ public final class Sql implements Connectable {
 		private T createInst(final Class<T> clazz) {
 			return (T) TryUtils.attemptOrNull(() -> Unsafe.getUnsafe().allocateInstance(clazz));
 		}
+
+		private void create() {
+			SqlUtils.useStatement(dataSource, "CREATE TABLE IF NOT EXISTS " + tableName +  + ';');
+		}
+
+
+		// Example: (uuid, name) VALUES (?, ?)
+		private String blankValues() {
+			"(uuid, name) VALUES (?, ?)"
+		}
+
+		private String typedValues() {
+			return variables.stream()
+				.map(sqlFieldResolver::typeFor)
+				.collect(Collectors.joining(", ", "(", ")"));
+		}
+
+	}
+
+
+	class FilteredTable<T> {
+
+		private final Table<T> table;
+
+		private final WhereClause[] whereClauses;
+
+
+		public FilteredTable(final Table<T> table, final WhereClause... whereClauses) {
+			this.table = table;
+			this.whereClauses = whereClauses;
+		}
+
+
+		public Table<T> getNormalTable() {
+			return table;
+		}
+
 
 	}
 
