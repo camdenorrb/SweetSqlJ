@@ -7,6 +7,9 @@ import me.camdenorrb.jcommons.base.tryblock.TryCloseBlock;
 import me.camdenorrb.jcommons.utils.TryUtils;
 import me.camdenorrb.sweetsqlj.anno.PrimaryKey;
 import me.camdenorrb.sweetsqlj.base.Connectable;
+import me.camdenorrb.sweetsqlj.base.SqlResolverBase;
+import me.camdenorrb.sweetsqlj.impl.mysql.MySqlConfig;
+import me.camdenorrb.sweetsqlj.impl.mysql.MySqlFieldResolver;
 import sun.misc.Unsafe;
 
 import java.io.File;
@@ -29,23 +32,23 @@ public final class Sql implements Connectable {
 
 	private final HikariConfig hikariConfig;
 
-	private final SqlFieldResolver sqlFieldResolver;
+	private final SqlResolverBase sqlResolver;
 
 
 	public Sql(final HikariConfig config) {
-		this(config, new SqlFieldResolver());
+		this(config, new MySqlFieldResolver());
 	}
 
-	public Sql(final SqlConfig config) {
-		this(config, new SqlFieldResolver());
+	public Sql(final MySqlConfig config) {
+		this(config, new MySqlFieldResolver());
 	}
 
-	public Sql(final HikariConfig config, final SqlFieldResolver sqlFieldResolver) {
+	public Sql(final HikariConfig config, final MySqlFieldResolver sqlFieldResolver) {
 		this.hikariConfig = config;
-		this.sqlFieldResolver = sqlFieldResolver;
+		this.sqlResolver = sqlFieldResolver;
 	}
 
-	public Sql(final SqlConfig config, final SqlFieldResolver sqlFieldResolver) {
+	public Sql(final MySqlConfig config, final MySqlFieldResolver sqlFieldResolver) {
 
 		final HikariConfig hikariConfig = new HikariConfig();
 
@@ -105,7 +108,7 @@ public final class Sql implements Connectable {
 
 
 	public static Sql fromOrMake(final File configFile, final Gson gson) {
-		return new Sql(SqlConfig.fromOrMake(configFile, gson));
+		return new Sql(MySqlConfig.fromOrMake(configFile, gson));
 	}
 
 
@@ -171,8 +174,10 @@ public final class Sql implements Connectable {
 			return (T) TryUtils.attemptOrNull(() -> Unsafe.getUnsafe().allocateInstance(clazz));
 		}
 
+		//CREATE TABLE IF NOT EXISTS UUIDForName (uuid CHAR(36) PRIMARY KEY NOT NULL, name VARCHAR(255) NOT NULL)
+
 		private void create() {
-			SqlUtils.useStatement(dataSource, "CREATE TABLE IF NOT EXISTS " + tableName +  + ';');
+			SqlUtils.useStatement(dataSource, "CREATE TABLE IF NOT EXISTS " + tableName + typedValues() + ';');
 		}
 
 
