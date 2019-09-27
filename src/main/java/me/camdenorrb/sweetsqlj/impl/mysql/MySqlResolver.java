@@ -12,13 +12,15 @@ import java.util.Map;
 import java.util.function.Consumer;
 
 
+// TODO: Make this write full statements such as createTable
 // TODO: Make this settable in [Sql] class in order to add better support to change
-public class MySqlFieldResolver implements SqlResolverBase {
+public class MySqlResolver implements SqlResolverBase {
 
 	private final Map<> codecs
 
 
-	public String typeFor(final Field field) {
+		// TODO: this can be moved to SQL or to an abstraction
+	public SqlType typeFor(final Field field) {
 
 		final boolean isNullable = field.getAnnotation(Nullable.class) != null;
 		final boolean isPrimaryK = field.getAnnotation(PrimaryKey.class) != null;

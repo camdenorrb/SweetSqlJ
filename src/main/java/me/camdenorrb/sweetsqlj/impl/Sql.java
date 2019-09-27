@@ -3,19 +3,21 @@ package me.camdenorrb.sweetsqlj.impl;
 import com.google.gson.Gson;
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
-import me.camdenorrb.jcommons.base.tryblock.TryCloseBlock;
 import me.camdenorrb.jcommons.utils.TryUtils;
 import me.camdenorrb.sweetsqlj.anno.PrimaryKey;
 import me.camdenorrb.sweetsqlj.base.Connectable;
 import me.camdenorrb.sweetsqlj.base.SqlResolverBase;
 import me.camdenorrb.sweetsqlj.impl.mysql.MySqlConfig;
-import me.camdenorrb.sweetsqlj.impl.mysql.MySqlFieldResolver;
+import me.camdenorrb.sweetsqlj.impl.mysql.MySqlResolver;
 import sun.misc.Unsafe;
 
 import java.io.File;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
+import java.sql.Connection;
 import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -30,25 +32,28 @@ public final class Sql implements Connectable {
 
 	private HikariDataSource dataSource;
 
+
 	private final HikariConfig hikariConfig;
 
 	private final SqlResolverBase sqlResolver;
 
+	private final SqlFieldResolver sqlFieldResolver;
+
 
 	public Sql(final HikariConfig config) {
-		this(config, new MySqlFieldResolver());
+		this(config, new MySqlResolver());
 	}
 
 	public Sql(final MySqlConfig config) {
-		this(config, new MySqlFieldResolver());
+		this(config, new MySqlResolver());
 	}
 
-	public Sql(final HikariConfig config, final MySqlFieldResolver sqlFieldResolver) {
+	public Sql(final HikariConfig config, final MySqlResolver sqlResolver) {
 		this.hikariConfig = config;
-		this.sqlResolver = sqlFieldResolver;
+		this.sqlResolver = sqlResolver;
 	}
 
-	public Sql(final MySqlConfig config, final MySqlFieldResolver sqlFieldResolver) {
+	public Sql(final MySqlConfig config, final MySqlResolver sqlResolver) {
 
 		final HikariConfig hikariConfig = new HikariConfig();
 
@@ -60,7 +65,7 @@ public final class Sql implements Connectable {
 		hikariConfig.addDataSourceProperty("prepStmtCacheSqlLimit", "2048");
 
 		this.hikariConfig = hikariConfig;
-		this.sqlFieldResolver = sqlFieldResolver;
+		this.sqlResolver = sqlResolver;
 	}
 
 
@@ -95,10 +100,30 @@ public final class Sql implements Connectable {
 		return new Table<>(clazz);
 	}
 
-	public void use(final String statement, final TryCloseBlock<PreparedStatement> block) {
-		attemptOrPrintErr(dataSource::getConnection, (connection) ->
-			attemptOrPrintErr(() -> connection.prepareStatement(statement), block)
-		);
+	// Execute
+	// TODO: Make this multithreaded, make them use Coroutines in SweetSqlK
+	public Boolean exe(final String statement) {
+		return use(statement, PreparedStatement::execute);
+	}
+
+	// Query
+	// TODO: Make this multithreaded, make them use Coroutines in SweetSqlK
+	public ResultSet que(final String statement) {
+		return use(statement, PreparedStatement::executeQuery);
+	}
+
+	public <R> R use(final String statement, final StatementBlock<R> block) {
+
+		try (final Connection connection = dataSource.getConnection()) {
+			try (final PreparedStatement preparedStatement = connection.prepareStatement(statement)) {
+				return block.attempt(preparedStatement);
+			}
+		}
+		catch (SQLException e) {
+			e.printStackTrace();
+		}
+
+		return null;
 	}
 
 
@@ -143,12 +168,12 @@ public final class Sql implements Connectable {
 				.filter(it -> it.isAnnotationPresent(PrimaryKey.class))
 				.findFirst().orElse(null);
 
-			use("CREATE TABLE IF NOT EXISTS " + tableName + typedValues() + ';', PreparedStatement::execute);
+			exe("CREATE TABLE IF NOT EXISTS " + tableName + typedValues() + ';');
 		}
 
 
 		public void add(final T value) {
-			SqlUtils.useStatement(dataSource, "INSERT INTO " + tableName);
+			//SqlUtils.useStatement(dataSource, "INSERT INTO " + tableName);
 		}
 
 		public FilteredTable<T> filter() {
@@ -174,12 +199,6 @@ public final class Sql implements Connectable {
 			return (T) TryUtils.attemptOrNull(() -> Unsafe.getUnsafe().allocateInstance(clazz));
 		}
 
-		//CREATE TABLE IF NOT EXISTS UUIDForName (uuid CHAR(36) PRIMARY KEY NOT NULL, name VARCHAR(255) NOT NULL)
-
-		private void create() {
-			SqlUtils.useStatement(dataSource, "CREATE TABLE IF NOT EXISTS " + tableName + typedValues() + ';');
-		}
-
 
 		// Example: (uuid, name) VALUES (?, ?)
 		private String blankValues() {
@@ -188,7 +207,7 @@ public final class Sql implements Connectable {
 
 		private String typedValues() {
 			return variables.stream()
-				.map(sqlFieldResolver::typeFor)
+				.map(sqlResolver::typeFor)
 				.collect(Collectors.joining(", ", "(", ")"));
 		}
 
@@ -212,6 +231,14 @@ public final class Sql implements Connectable {
 			return table;
 		}
 
+
+	}
+
+
+	@FunctionalInterface
+	interface StatementBlock<R> {
+
+		R attempt(final PreparedStatement statement) throws SQLException;
 
 	}
 
