@@ -1,11 +1,18 @@
 package me.camdenorrb.sweetsqlj.impl;
 
+import java.util.Map;
+
+
 public final class Where {
 
-	private final String name, compareOperator;
+	private boolean negated;
 
 	private final String[] values;
 
+	private final String name, compareOperator;
+
+
+	private final Map<> chained
 
 	/**
 	 * Constructs a Where Clause
@@ -30,6 +37,15 @@ public final class Where {
 	}
 
 
+	public void or(final Where where) {
+
+	}
+
+	public void and(final Where where) {
+
+	}
+
+
 	public String getName() {
 		return name;
 	}
@@ -40,6 +56,19 @@ public final class Where {
 
 	public String[] getValues() {
 		return values;
+	}
+
+	public boolean isNegated() {
+		return negated;
+	}
+
+	public void setNegated(boolean negated) {
+		this.negated = negated;
+	}
+
+
+	enum Relation {
+		OR, AND
 	}
 
 }

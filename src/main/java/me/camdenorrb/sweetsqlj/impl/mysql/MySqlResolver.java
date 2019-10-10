@@ -21,7 +21,7 @@ public class MySqlResolver implements SqlResolverBase {
 	@Override
 	public String createTable(Sql.Table<?> table) {
 
-		final StringBuilder builder = new StringBuilder("CREATE TABLE IF NOT EXISTS " + table.getName() + '(');
+		final StringBuilder builder = new StringBuilder();
 		final List<SqlValue> sqlValues = table.getSqlValues();
 
 		for (int i = 0; i < sqlValues.size(); i++) {
@@ -35,61 +35,92 @@ public class MySqlResolver implements SqlResolverBase {
 			}
 		}
 
-		return builder.append(");").toString();
+		return "CREATE TABLE IF NOT EXISTS " + table.getName() + '(' + builder.append(");");
 	}
 
 	@Override
-	public String deleteTable(Sql.Table<?> table) {
+	public String deleteTable(final Sql.Table<?> table) {
 		return "DROP TABLE IF EXISTS " + table.getName() + ';';
 	}
 
 	@Override
-	public String deleteTable(Sql.Table<?> table, Where where) {
+	public String deleteTable(final Sql.Table<?> table, final Where where) {
 		return "DELETE FROM " + table.getName() + ' ' + pushWhere(where);
 	}
 
 	@Override
-	public String insertTable(Sql.Table<?> table, SqlValue... values) {
+	public String insertTable(final Sql.Table<?> table, final SqlValue... values) {
 
-
-		final StringBuilder builder = new StringBuilder();
+		final StringBuilder valueNamesBuilder = new StringBuilder();
 
 		for (int i = 0; i < values.length; i++) {
 
-			builder.append('?');
+			valueNamesBuilder.append(values[i].getName());
 
 			if (i + 1 < values.length) {
-				builder.append(", ");
+				valueNamesBuilder.append(", ");
 			}
 		}
 
-		"INSERT INTO " + table.getName() + " (" + builder + "); VALUES (" + builder + ")";
+		final StringBuilder valueBuilder = new StringBuilder();
+
+		for (int i = 0; i < values.length; i++) {
+
+			valueBuilder.append('?');
+
+			if (i + 1 < values.length) {
+				valueBuilder.append(", ");
+			}
+		}
+
+		return "INSERT INTO " + table.getName() + '(' + valueNamesBuilder + ')' + " VALUES (" + valueBuilder + ");";
+	}
+
+	@Override
+	public String queryTable(final Sql.Table<?> table) {
 		return null;
 	}
 
 	@Override
-	public String selectTable(Sql.Table<?> table) {
+	public String queryTable(final Sql.FilteredTable<?> table) {
+
+		return "SELECT * FROM " + table.getNormalTable() + ' ' + pushWhere(table.getWhereClause());
+	}
+
+	@Override
+	public String queryTableDistinct(final Sql.Table<?> table, final String row) {
 		return null;
 	}
 
 	@Override
-	public String queryTable(Sql.FilteredTable<?> table) {
-		return null;
-	}
-
-	@Override
-	public String queryTableDistinct(Sql.Table<?> table, String row) {
-		return null;
-	}
-
-	@Override
-	public String clearTable(Sql.Table<?> table) {
+	public String clearTable(final Sql.Table<?> table) {
 		return "TRUNCATE TABLE " + table.getName() + ';';
 	}
 
 	@Override
+	public String pushWhere(final Where where) {
+
+		final String[] values = where.getValues();
+		final StringBuilder builder = new StringBuilder("(");
+
+		for (int i = 0; i < values.length; i++) {
+
+			builder.append('\'').append(values[i]).append('\'');
+
+			if (i + 1 < values.length) {
+				builder.append(", ");
+			}
+			else {
+				builder.append(')');
+			}
+		}
+
+		return "WHERE " + where.getName() + ' ' + where.getCompareOperator() + ' ' + builder;
+	}
+
+	@Override
 	@SuppressWarnings("unchecked")
-	public <T extends SqlValue> void addTyper(Class<T> clazz, SqlTyper<T> typer) {
+	public <T extends SqlValue> void addTyper(final Class<T> clazz, SqlTyper<T> typer) {
 		typers.put(clazz, (SqlTyper<SqlValue>) typer);
 	}
 

@@ -18,7 +18,7 @@ public interface SqlResolverBase {
 
 	String insertTable(final Sql.Table<?> table, final SqlValue... values);
 
-	String selectTable(final Sql.Table<?> table);
+	String queryTable(final Sql.Table<?> table);
 
 	String queryTable(final Sql.FilteredTable<?> table);
 
@@ -27,6 +27,8 @@ public interface SqlResolverBase {
 	String clearTable(final Sql.Table<?> table);
 
 	String pushWhere(final Where where);
+
+	String existsInTable(final Sql.Table<?> table, final SqlValue... values);
 
 
 	// Value --> TypedValue, BlankValue

@@ -19,8 +19,7 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.Collection;
-import java.util.List;
+import java.util.*;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -205,17 +204,26 @@ public class Sql implements Connectable {
 
 		}
 
-		// TODO: Make this construct a where clause
-		public FilteredTable<T> filter(final Where where) {
-
-		}
-
 		/**
 		 * @see Where#Where(String, String, String...)
 		 */
 		public FilteredTable<T> filter(final String name, final String s, String coolCat69) {
 
 		}
+
+		// TODO: filterNot
+
+		public FilteredTable<T> filterNot(final Where where) {
+
+		}
+
+		/**
+		 * @see Where#Where(String, String, String...)
+		 */
+		public FilteredTable<T> filterNot(final String name, final String s, String coolCat69) {
+
+		}
+
 
 		// Distinct select
 		public List<T> row(final String row) {
@@ -281,21 +289,72 @@ public class Sql implements Connectable {
 		private final Table<T> table;
 
 		// Where(x, EQUAL_OR_GREATER_THAN, y)
-		private final Where[] whereClauses;
+
+		private final Where whereClause;
+
+		private final List<Where> whereOrClauses = new ArrayList<>();
+
+		private final List<Where> whereAndClauses = new ArrayList<>();
 
 
-		public FilteredTable(final Table<T> table, final Where... whereClauses) {
+		public FilteredTable(final Table<T> table, final Where whereClause) {
 			this.table = table;
-			this.whereClauses = whereClauses;
+			this.whereClause = whereClause;
 		}
 
+
+		public void add(T value) {
+			table.add(value);
+		}
+
+		public FilteredTable<T> and(final Where where) {
+			// Maybe just add a whree clause
+			throw new RuntimeException("Implement");
+		}
+
+		public FilteredTable<T> and(final String name, String s, String coolCat69) {
+			throw new RuntimeException("Implement");
+		}
+
+		public FilteredTable<T> or(final Where where) {
+			// Maybe just add a whree clause
+			throw new RuntimeException("Implement");
+		}
+
+		public FilteredTable<T> or(final String name, String s, String coolCat69) {
+			throw new RuntimeException("Implement");
+		}
+
+		public List<T> row(String row) {
+			throw new RuntimeException("Implement");
+		}
+
+		public String getName() {
+			return table.getName();
+		}
+
+		public Class<T> getClazz() {
+			return table.getClazz();
+		}
+
+		public Field getPrimaryKey() {
+			return table.getPrimaryKey();
+		}
+
+		public List<Field> getFields() {
+			return table.getFields();
+		}
+
+		public List<SqlValue> getSqlValues() {
+			return table.getSqlValues();
+		}
 
 		public Table<T> getNormalTable() {
 			return table;
 		}
 
-		public Where[] getWhereClauses() {
-			return whereClauses;
+		public Where getWhereClause() {
+			return whereClause;
 		}
 
 		public void forEach(final Consumer<T> consumer) {
