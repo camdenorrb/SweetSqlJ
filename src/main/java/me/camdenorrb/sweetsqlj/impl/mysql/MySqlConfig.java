@@ -1,12 +1,14 @@
 package me.camdenorrb.sweetsqlj.impl.mysql;
 
 import com.google.gson.Gson;
+import com.zaxxer.hikari.HikariConfig;
 import me.camdenorrb.jcommons.utils.GsonUtils;
+import me.camdenorrb.sweetsqlj.base.SqlConfigBase;
 
 import java.io.File;
 
 
-public final class MySqlConfig {
+public final class MySqlConfig implements SqlConfigBase {
 
 	private final int port;
 
@@ -23,6 +25,22 @@ public final class MySqlConfig {
 		this.host = host;
 		this.port = port;
 		this.base = base;
+	}
+
+
+	@Override
+	public HikariConfig toHikari() {
+
+		final HikariConfig hikariConfig = new HikariConfig();
+
+		hikariConfig.setJdbcUrl("jdbc:mysql://" + host + ':' + port + '/' + base + "?useSSL=false");
+		hikariConfig.setUsername(user);
+		hikariConfig.setPassword(pass);
+		hikariConfig.addDataSourceProperty("cachePrepStmts", "true");
+		hikariConfig.addDataSourceProperty("prepStmtCacheSize", "250");
+		hikariConfig.addDataSourceProperty("prepStmtCacheSqlLimit", "2048");
+
+		return hikariConfig;
 	}
 
 
