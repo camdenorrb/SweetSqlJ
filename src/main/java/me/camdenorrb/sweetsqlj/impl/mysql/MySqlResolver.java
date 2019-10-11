@@ -22,7 +22,7 @@ public class MySqlResolver implements SqlResolverBase {
 
 	@Override
 	public String createTable(Sql.Table<?> table) {
-		
+
 		final List<SqlValue> sqlValues = table.getSqlValues();
 		final String typedValues = StringUtils.build(sqlValues, ", ", val -> typers.get(val).pushTyped(val));
 
