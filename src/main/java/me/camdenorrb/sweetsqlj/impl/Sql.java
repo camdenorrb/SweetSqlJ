@@ -118,6 +118,7 @@ public class Sql implements Connectable {
 
 
 	// Execute
+	// TODO: Make it use Quasar by default
 	// TODO: Maybe add a way to set the sql executor
 	// TODO: Make this multithreaded, make them use Coroutines in SweetSqlK
 	public Boolean exe(final String statement) {
@@ -125,6 +126,7 @@ public class Sql implements Connectable {
 	}
 
 	// Query
+	// TODO: Make it use Quasar by default
 	// TODO: Maybe add a way to set the sql executor
 	// TODO: Make this multithreaded, make them use Coroutines in SweetSqlK
 	public ResultSet que(final String statement) {
@@ -200,33 +202,33 @@ public class Sql implements Connectable {
 			//SqlUtils.useStatement(dataSource, "INSERT INTO " + tableName);
 		}
 
-		public FilteredTable<T> filter(final Where where) {
+		public Table<T> filter(final Where where) {
 
 		}
 
 		/**
 		 * @see Where#Where(String, String, String...)
 		 */
-		public FilteredTable<T> filter(final String name, final String s, String coolCat69) {
+		public Table<T> filter(final String name, final String s, String coolCat69) {
 
 		}
 
 		// TODO: filterNot
 
-		public FilteredTable<T> filterNot(final Where where) {
+		public Table<T> filterNot(final Where where) {
 
 		}
 
 		/**
 		 * @see Where#Where(String, String, String...)
 		 */
-		public FilteredTable<T> filterNot(final String name, final String s, String coolCat69) {
+		public Table<T> filterNot(final String name, final String s, String coolCat69) {
 
 		}
 
 
 		// Distinct select
-		public List<T> row(final String row) {
+		public List<T> values(final String columnName) {
 
 		}
 
@@ -263,6 +265,16 @@ public class Sql implements Connectable {
 			}
 		}
 
+		public Sql.CachedTable<T> cached() {
+
+			// TODO: On construction select * immediately
+			// TODO: Have a CachedTable#update method
+			// TODO: Rather than using hacky filter methods, just use a normal one
+			// TODO: Make it EXACTLY like interacting with a collection
+
+			throw new RuntimeException("Implement");
+		}
+
 
 		// Example: (uuid, name) VALUES (?, ?)
 		// TODO: This should be handled in [SqlResolverBase]
@@ -284,6 +296,7 @@ public class Sql implements Connectable {
 
 
 	// TODO: Pass this to [SqlResolverBase] for filter statement
+	/*
 	public class FilteredTable<T> {
 
 		private final Table<T> table;
@@ -291,10 +304,6 @@ public class Sql implements Connectable {
 		// Where(x, EQUAL_OR_GREATER_THAN, y)
 
 		private final Where whereClause;
-
-		private final List<Where> whereOrClauses = new ArrayList<>();
-
-		private final List<Where> whereAndClauses = new ArrayList<>();
 
 
 		public FilteredTable(final Table<T> table, final Where whereClause) {
@@ -306,6 +315,7 @@ public class Sql implements Connectable {
 		public void add(T value) {
 			table.add(value);
 		}
+
 
 		public FilteredTable<T> and(final Where where) {
 			// Maybe just add a whree clause
@@ -361,6 +371,6 @@ public class Sql implements Connectable {
 			throw new RuntimeException("Implement!");
 		}
 
-	}
+	}*/
 
 }

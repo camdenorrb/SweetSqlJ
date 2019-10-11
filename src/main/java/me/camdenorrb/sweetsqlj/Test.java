@@ -9,6 +9,7 @@ import me.camdenorrb.sweetsqlj.test.User;
 import java.io.File;
 import java.sql.Connection;
 import java.util.Map;
+import java.util.function.Function;
 
 
 public class Test {
@@ -19,14 +20,24 @@ public class Test {
 		final Sql sql = Sql.fromOrMake(new File("test.json"), gson);
 
 		final Sql.Table<User> userTable = sql.table(User.class);
+		final Sql.CachedTable<User> userTableCached = sql.table(User.class).cached();
 
 		userTable.contains(user);
 
-		userTable.row("");
+		userTable.values("columnName");
 
 		userTable.filter("name", "=", "coolCat69").forEach();
 
-		userTable.filter(new Where("name", "=", "coolCat69")).contains(user);
+		userTable
+			.filterEquals("name", "coolCat69")
+			.filter(User::getName, EQUALS, "coolCat69")
+			.filter()
+
+		userTable
+			.filter("name", "=", "coolCat69")
+			.and("name", "=", "coolCat69")
+			.or("name", "=", "coolCat69")
+			.contains(user);
 
 		userTable.filter(new Where("name", "=", "coolCat69")).forEach(it ->
 			System.out.println(it.getUuid())

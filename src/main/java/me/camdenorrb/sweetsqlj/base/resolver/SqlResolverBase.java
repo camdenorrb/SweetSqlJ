@@ -26,7 +26,7 @@ public interface SqlResolverBase {
 
 	String clearTable(final Sql.Table<?> table);
 
-	String pushWhere(final Where where);
+	//String pushWhere(final Where where);
 
 	String existsInTable(final Sql.Table<?> table, final SqlValue... values);
 

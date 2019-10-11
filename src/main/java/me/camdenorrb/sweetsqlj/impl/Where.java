@@ -1,18 +1,20 @@
 package me.camdenorrb.sweetsqlj.impl;
 
-import java.util.Map;
+import java.util.ArrayList;
+import java.util.List;
 
 
 public final class Where {
 
 	private boolean negated;
 
+
 	private final String[] values;
 
 	private final String name, compareOperator;
 
+	private final List<Related> relatives = new ArrayList<>();
 
-	private final Map<> chained
 
 	/**
 	 * Constructs a Where Clause
@@ -66,6 +68,33 @@ public final class Where {
 		this.negated = negated;
 	}
 
+
+	static class Related {
+
+		private final Where where;
+
+
+		private Related(final Where where) {
+			this.where = where;
+		}
+
+
+		public Where getWhere() {
+			return where;
+		}
+
+	}
+
+
+	// TODO: Move back to these
+	enum Comparison {
+		EQUALS,
+		LESS_THAN,
+		GREATER_THAN,
+		EQUAL_OR_GREATER_THAN,
+		EQUAL_OR_LESS_THAN,
+
+	}
 
 	enum Relation {
 		OR, AND

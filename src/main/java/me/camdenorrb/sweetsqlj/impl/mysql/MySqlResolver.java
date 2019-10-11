@@ -5,6 +5,7 @@ import me.camdenorrb.sweetsqlj.base.resolver.SqlResolverBase;
 import me.camdenorrb.sweetsqlj.impl.Sql;
 import me.camdenorrb.sweetsqlj.impl.Where;
 import me.camdenorrb.sweetsqlj.impl.value.base.SqlValue;
+import me.camdenorrb.sweetsqlj.utils.StringUtils;
 
 import java.util.HashMap;
 import java.util.List;
@@ -17,25 +18,15 @@ public class MySqlResolver implements SqlResolverBase {
 
 	private final Map<Class<? extends SqlValue>, SqlTyper<SqlValue>> typers = new HashMap<>();
 
+	// TODO: Make a method to join a list of strings
 
 	@Override
 	public String createTable(Sql.Table<?> table) {
-
-		final StringBuilder builder = new StringBuilder();
+		
 		final List<SqlValue> sqlValues = table.getSqlValues();
+		final String typedValues = StringUtils.build(sqlValues, ", ", val -> typers.get(val).pushTyped(val));
 
-		for (int i = 0; i < sqlValues.size(); i++) {
-
-			final SqlValue value = sqlValues.get(i);
-
-			builder.append(typers.get(value.getClass()).pushTyped(value));
-
-			if (i + 1 < sqlValues.size()) {
-				builder.append(", ");
-			}
-		}
-
-		return "CREATE TABLE IF NOT EXISTS " + table.getName() + '(' + builder.append(");");
+		return "CREATE TABLE IF NOT EXISTS " + table.getName() + '(' + typedValues + ");";
 	}
 
 	@Override
@@ -51,29 +42,10 @@ public class MySqlResolver implements SqlResolverBase {
 	@Override
 	public String insertTable(final Sql.Table<?> table, final SqlValue... values) {
 
-		final StringBuilder valueNamesBuilder = new StringBuilder();
+		final String valueNames = StringUtils.build(values, ", ", SqlValue::getName);
+		final String valueHolder = StringUtils.build('?', ", ", values.length);
 
-		for (int i = 0; i < values.length; i++) {
-
-			valueNamesBuilder.append(values[i].getName());
-
-			if (i + 1 < values.length) {
-				valueNamesBuilder.append(", ");
-			}
-		}
-
-		final StringBuilder valueBuilder = new StringBuilder();
-
-		for (int i = 0; i < values.length; i++) {
-
-			valueBuilder.append('?');
-
-			if (i + 1 < values.length) {
-				valueBuilder.append(", ");
-			}
-		}
-
-		return "INSERT INTO " + table.getName() + '(' + valueNamesBuilder + ')' + " VALUES (" + valueBuilder + ");";
+		return "INSERT INTO " + table.getName() + '(' + valueNames + ')' + " VALUES (" + valueHolder + ");";
 	}
 
 	@Override
@@ -98,27 +70,6 @@ public class MySqlResolver implements SqlResolverBase {
 	}
 
 	@Override
-	public String pushWhere(final Where where) {
-
-		final String[] values = where.getValues();
-		final StringBuilder builder = new StringBuilder("(");
-
-		for (int i = 0; i < values.length; i++) {
-
-			builder.append('\'').append(values[i]).append('\'');
-
-			if (i + 1 < values.length) {
-				builder.append(", ");
-			}
-			else {
-				builder.append(')');
-			}
-		}
-
-		return "WHERE " + where.getName() + ' ' + where.getCompareOperator() + ' ' + builder;
-	}
-
-	@Override
 	@SuppressWarnings("unchecked")
 	public <T extends SqlValue> void addTyper(final Class<T> clazz, SqlTyper<T> typer) {
 		typers.put(clazz, (SqlTyper<SqlValue>) typer);
@@ -128,5 +79,20 @@ public class MySqlResolver implements SqlResolverBase {
 	public void remTyper(Class<? extends SqlValue> clazz) {
 		typers.remove(clazz);
 	}
+
+
+	public String pushWhere(final Where where) {
+
+		final String[] values = where.getValues();
+
+		final String valueNames = StringUtils.build(values, ", ", it ->
+			'\'' + it + '\''
+		);
+
+		// TODO: Append Where relations
+
+		return "WHERE " + where.getName() + ' ' + where.getCompareOperator() + " (" + valueNames + ')';
+	}
+
 
 }
