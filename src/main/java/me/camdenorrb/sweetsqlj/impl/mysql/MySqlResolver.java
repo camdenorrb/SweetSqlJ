@@ -50,14 +50,10 @@ public class MySqlResolver implements SqlResolverBase {
 
 	@Override
 	public String queryTable(final Sql.Table<?> table) {
-		return null;
-	}
-
-	@Override
-	public String queryTable(final Sql.FilteredTable<?> table) {
-
+		// TODO: Check if it has any filters
 		return "SELECT * FROM " + table.getNormalTable() + ' ' + pushWhere(table.getWhereClause());
 	}
+
 
 	@Override
 	public String queryTableDistinct(final Sql.Table<?> table, final String row) {

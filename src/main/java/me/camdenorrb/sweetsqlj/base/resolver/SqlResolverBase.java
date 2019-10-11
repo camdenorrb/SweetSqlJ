@@ -20,7 +20,7 @@ public interface SqlResolverBase {
 
 	String queryTable(final Sql.Table<?> table);
 
-	String queryTable(final Sql.FilteredTable<?> table);
+	//String queryTable(final Sql.FilteredTable<?> table);
 
 	String queryTableDistinct(final Sql.Table<?> table, final String row);
 

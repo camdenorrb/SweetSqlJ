@@ -294,6 +294,9 @@ public class Sql implements Connectable {
 
 	}
 
+	public class CachedTable<T> {
+	}
+
 
 	// TODO: Pass this to [SqlResolverBase] for filter statement
 	/*
