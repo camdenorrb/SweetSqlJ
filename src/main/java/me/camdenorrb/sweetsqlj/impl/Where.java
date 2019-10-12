@@ -8,15 +8,17 @@ public final class Where {
 
 	private boolean negated;
 
+	private final String name;
 
 	private final String[] values;
 
-	private final String name, compareOperator;
+	private final Comparison comparison;
 
 	private final List<Related> relatives = new ArrayList<>();
 
 
-	/**
+	// Commented out
+	/*
 	 * Constructs a Where Clause
 	 *
 	 * @param name
@@ -32,19 +34,26 @@ public final class Where {
 	 * @param values
 	 * <p>The values you're comparing the row with</p>
 	 */
-	public Where(final String name, final String compareOperator, final String... values) {
+	/*
+	protected Where(final String name, final String compareOperator, final String... values) {
 		this.name = name;
 		this.compareOperator = compareOperator;
+		this.values = values;
+	}*/
+
+	public Where(final String name, final Comparison comparison, final String[] values) {
+		this.name = name;
+		this.comparison = comparison;
 		this.values = values;
 	}
 
 
 	public void or(final Where where) {
-
+		relatives.add(new Related(where, Relation.OR));
 	}
 
 	public void and(final Where where) {
-
+		relatives.add(new Related(where, Relation.AND));
 	}
 
 
@@ -52,8 +61,12 @@ public final class Where {
 		return name;
 	}
 
-	public String getCompareOperator() {
-		return compareOperator;
+	public Comparison getComparison() {
+		return comparison;
+	}
+
+	public List<Related> getRelatives() {
+		return relatives;
 	}
 
 	public String[] getValues() {
@@ -73,9 +86,12 @@ public final class Where {
 
 		private final Where where;
 
+		private final Relation relation;
 
-		private Related(final Where where) {
+
+		private Related(final Where where, final Relation relation) {
 			this.where = where;
+			this.relation = relation;
 		}
 
 
@@ -83,17 +99,22 @@ public final class Where {
 			return where;
 		}
 
+		public Relation getRelation() {
+			return relation;
+		}
+
 	}
 
 
-	// TODO: Move back to these
 	enum Comparison {
+		IN,
+		LIKE,
 		EQUALS,
-		LESS_THAN,
-		GREATER_THAN,
-		EQUAL_OR_GREATER_THAN,
-		EQUAL_OR_LESS_THAN,
-
+		BETWEEN,
+		LESSER_THAN,
+		BIGGER_THAN,
+		EQUAL_OR_BIGGER_THAN,
+		EQUAL_OR_LESSER_THAN,
 	}
 
 	enum Relation {
