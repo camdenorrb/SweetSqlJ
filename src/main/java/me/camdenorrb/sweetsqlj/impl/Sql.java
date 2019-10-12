@@ -172,6 +172,9 @@ public class Sql implements Connectable {
 
 		private final List<SqlValue> sqlValues;
 
+
+		private Where whereFilter;
+
 		//CREATE TABLE IF NOT EXISTS UUIDForName (uuid CHAR(36) PRIMARY KEY NOT NULL, name VARCHAR(255) NOT NULL)
 		//"INSERT INTO UUIDForName (uuid, name) VALUES (?, ?) ON DUPLICATE KEY UPDATE name=name";
 
@@ -202,27 +205,45 @@ public class Sql implements Connectable {
 			//SqlUtils.useStatement(dataSource, "INSERT INTO " + tableName);
 		}
 
-		public Table<T> filter(final Where where) {
-
-		}
+		// TODO: Remove where parameter
 
 		/**
 		 * @see Where#Where(String, String, String...)
 		 */
-		public Table<T> filter(final String name, final String s, String coolCat69) {
+		public Table<T> filter(final String name, final Where.Comparison comparison, final String... values) {
 
+			final Where where = new Where(name, comparison, values);
+
+			if (whereFilter == null) {
+				whereFilter = where;
+			}
+			else {
+				whereFilter.and(where);
+			}
+
+			return this;
 		}
 
 		// TODO: filterNot
 
 		public Table<T> filterNot(final Where where) {
 
+			where.setNegated(true);
+
+			if (whereFilter == null) {
+				whereFilter = where;
+			}
+			else {
+				whereFilter.and(where);
+			}
+
+			return this;
 		}
 
 		/**
 		 * @see Where#Where(String, String, String...)
 		 */
-		public Table<T> filterNot(final String name, final String s, String coolCat69) {
+		public Table<T> filterNot(final String name, final String compareOperator, final String... values) {
 
 		}
 
@@ -265,7 +286,7 @@ public class Sql implements Connectable {
 			}
 		}
 
-		public Sql.CachedTable<T> cached() {
+		public CachedTable<T> cached() {
 
 			// TODO: On construction select * immediately
 			// TODO: Have a CachedTable#update method
@@ -275,6 +296,9 @@ public class Sql implements Connectable {
 			throw new RuntimeException("Implement");
 		}
 
+		public Where getWhereFilter() {
+			return whereFilter;
+		}
 
 		// Example: (uuid, name) VALUES (?, ?)
 		// TODO: This should be handled in [SqlResolverBase]
