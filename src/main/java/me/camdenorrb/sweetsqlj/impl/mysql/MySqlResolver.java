@@ -12,8 +12,6 @@ import java.util.List;
 import java.util.Map;
 
 
-// TODO: Make this write full statements such as createTable
-// TODO: Make this settable in [Sql] class in order to add better support to change
 public class MySqlResolver implements SqlResolverBase {
 
 	private final Map<Class<? extends SqlValue>, SqlTyper<SqlValue>> typers = new HashMap<>();
@@ -21,7 +19,7 @@ public class MySqlResolver implements SqlResolverBase {
 	// TODO: Make a method to join a list of strings
 
 	@Override
-	public String createTable(Sql.Table<?> table) {
+	public String createTable(final Sql.Table<?> table) {
 
 		final List<SqlValue> sqlValues = table.getSqlValues();
 		final String typedValues = StringUtils.build(sqlValues, ", ", val -> typers.get(val).pushTyped(val));
@@ -51,7 +49,7 @@ public class MySqlResolver implements SqlResolverBase {
 	@Override
 	public String queryTable(final Sql.Table<?> table) {
 		// TODO: Check if it has any filters
-		return "SELECT * FROM " + table.getNormalTable() + ' ' + pushWhere(table.getWhereClause());
+		return "SELECT * FROM " + table.getName() + ' ' + pushWhere(table.getWhereFilter());
 	}
 
 
@@ -87,6 +85,7 @@ public class MySqlResolver implements SqlResolverBase {
 
 		// TODO: Append Where relations
 
+		switch ()
 		return "WHERE " + where.getName() + ' ' + where.getCompareOperator() + " (" + valueNames + ')';
 	}
 
