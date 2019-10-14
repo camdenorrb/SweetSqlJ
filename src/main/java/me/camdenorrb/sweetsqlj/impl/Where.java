@@ -82,7 +82,7 @@ public final class Where {
 	}
 
 
-	static class Related {
+	public static class Related {
 
 		private final Where where;
 
@@ -106,7 +106,7 @@ public final class Where {
 	}
 
 
-	enum Comparison {
+	public enum Comparison {
 		IN,
 		LIKE,
 		EQUALS,
@@ -117,7 +117,7 @@ public final class Where {
 		EQUAL_OR_LESSER_THAN,
 	}
 
-	enum Relation {
+	public enum Relation {
 		OR, AND
 	}
 

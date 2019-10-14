@@ -85,7 +85,31 @@ public class MySqlResolver implements SqlResolverBase {
 
 		// TODO: Append Where relations
 
-		switch ()
+		final String operator;
+
+		switch (where.getComparison()) {
+			case IN:
+				operator = "IN";
+				break;
+			case LIKE:
+				operator = "LIKE";
+				break;
+			case EQUALS:
+				operator = "=";
+				break;
+			case BETWEEN:
+				operator = ""
+				break;
+			case LESSER_THAN:
+				break;
+			case BIGGER_THAN:
+				break;
+			case EQUAL_OR_BIGGER_THAN:
+				break;
+			case EQUAL_OR_LESSER_THAN:
+				break;
+		}
+
 		return "WHERE " + where.getName() + ' ' + where.getCompareOperator() + " (" + valueNames + ')';
 	}
 
