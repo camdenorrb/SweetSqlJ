@@ -14,6 +14,7 @@ import sun.misc.Unsafe;
 
 import java.io.File;
 import java.lang.reflect.Field;
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Modifier;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -224,27 +225,14 @@ public class Sql implements Connectable {
 			return this;
 		}
 
-		// TODO: filterNot
-
-		public Table<T> filterNot(final Where where) {
-
-			where.setNegated(true);
-
-			if (whereFilter == null) {
-				whereFilter = where;
-			}
-			else {
-				whereFilter.and(where);
-			}
-
-			return this;
-		}
-
 		/**
 		 * @see Where#Where(String, String, String...)
 		 */
-		public Table<T> filterNot(final String name, final String compareOperator, final String... values) {
-
+		public Table<T> filterNot(final String name, final Where.Comparison comparison, final String... values) {
+			final Where where = new Where(name, comparison, values);
+			where.setNegated(true);
+			LinkedList
+			return filter(where);
 		}
 
 
@@ -277,8 +265,14 @@ public class Sql implements Connectable {
 
 		@SuppressWarnings("unchecked")
 		private T createInst(final Class<T> clazz) {
-			try  {
-				return (T) Unsafe.getUnsafe().allocateInstance(clazz);
+			try {
+				try {
+					return clazz.getConstructor().newInstance();
+				}
+				catch (NoSuchMethodException | IllegalAccessException | InvocationTargetException e) {
+					return (T) Unsafe.getUnsafe().allocateInstance(clazz);
+				}
+				// TODO: Make a way to call a non-default constructor with given values
 			}
 			catch (InstantiationException e) {
 				e.printStackTrace();
