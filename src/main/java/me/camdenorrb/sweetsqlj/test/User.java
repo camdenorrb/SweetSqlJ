@@ -3,6 +3,7 @@ package me.camdenorrb.sweetsqlj.test;
 import me.camdenorrb.sweetsqlj.anno.PrimaryKey;
 
 import java.util.UUID;
+import java.util.function.Function;
 
 
 public class User {
@@ -13,6 +14,7 @@ public class User {
 
 	private final String name;
 
+	@Column("uuid") // Optional annotation
 	private final UUID uuid;
 
 	private transient final String secret;
@@ -35,6 +37,11 @@ public class User {
 
 	public String getName() {
 		return name;
+	}
+
+	public interface Test {
+
+
 	}
 
 }

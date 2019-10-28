@@ -3,6 +3,8 @@ package me.camdenorrb.sweetsqlj.impl;
 import com.google.gson.Gson;
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
+import me.camdenorrb.jcommons.utils.TryUtils;
+import me.camdenorrb.sweetsqlj.anno.Column;
 import me.camdenorrb.sweetsqlj.anno.PrimaryKey;
 import me.camdenorrb.sweetsqlj.base.*;
 import me.camdenorrb.sweetsqlj.base.resolver.SqlFieldResolverBase;
@@ -16,12 +18,14 @@ import java.io.File;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Modifier;
+import java.lang.reflect.Type;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.*;
 import java.util.function.Consumer;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -161,17 +165,18 @@ public class Sql implements Connectable {
 
 	public class Table<T> {
 
-		private final Class<T> clazz;
-
-		private final Field primaryKey;
+		private Field primaryKey;
 
 		private final String name;
 
+		private final Class<T> clazz;
+
 		// TODO: Maybe find a better way to link fields and values
 
-		private final List<Field> fields;
+		private final Map<String, Field> columns = new HashMap<>();
+		//private final List<Field> fields;
 
-		private final List<SqlValue> sqlValues;
+		//private final List<SqlValue> sqlValues;
 
 
 		private Where whereFilter;
@@ -188,13 +193,24 @@ public class Sql implements Connectable {
 			this.clazz = clazz;
 			this.name = name;
 
-			fields = Stream.of(clazz.getDeclaredFields())
-				.filter(it -> !Modifier.isTransient(it.getModifiers()))
-				.collect(Collectors.toList());
+			for (final Field field : clazz.getDeclaredFields()) {
 
-			primaryKey = fields.stream()
-				.filter(it -> it.isAnnotationPresent(PrimaryKey.class))
-				.findFirst().orElse(null);
+				if (Modifier.isTransient(field.getModifiers())) continue;
+
+				final Column column = field.getAnnotation(Column.class);
+				final String columnName = column == null ? field.getName() : column.name();
+
+				columns.put(columnName, field);
+
+				if (field.isAnnotationPresent(PrimaryKey.class)) {
+
+					if (primaryKey != null) {
+						throw new RuntimeException("Multiple primary keys found for " + clazz.getSimpleName());
+					}
+
+					primaryKey = field;
+				}
+			}
 
 			exe(sqlResolver.createTable(this));
 			//exe("CREATE TABLE IF NOT EXISTS " + name + typedValues() + ';');
@@ -229,16 +245,36 @@ public class Sql implements Connectable {
 		 * @see Where#Where(String, String, String...)
 		 */
 		public Table<T> filterNot(final String name, final Where.Comparison comparison, final String... values) {
+
 			final Where where = new Where(name, comparison, values);
 			where.setNegated(true);
-			LinkedList
-			return filter(where);
+
+			if (whereFilter == null) {
+				whereFilter = where;
+			}
+			else {
+				whereFilter.and(where);
+			}
+
+			return this;
 		}
 
 
 		// Distinct select
-		public List<T> values(final String columnName) {
+		public List<String> values(final String columnName) {
 
+			final List<String> values = new ArrayList<>();
+
+			try(final ResultSet results = que(sqlResolver.queryTableDistinct(this, columnName))) {
+				while (results.next()) {
+					values.add(results.getString(columnName));
+				}
+			}
+			catch (SQLException e) {
+				e.printStackTrace();
+			}
+
+			return values;
 		}
 
 
@@ -254,14 +290,9 @@ public class Sql implements Connectable {
 			return primaryKey;
 		}
 
-		public List<Field> getFields() {
-			return fields;
+		public Map<String, Field> getColumns() {
+			return columns;
 		}
-
-		public List<SqlValue> getSqlValues() {
-			return sqlValues;
-		}
-
 
 		@SuppressWarnings("unchecked")
 		private T createInst(final Class<T> clazz) {
@@ -312,6 +343,7 @@ public class Sql implements Connectable {
 
 	}
 
+	// Treat as if it's direct access to a map or something
 	public class CachedTable<T> {
 	}
 

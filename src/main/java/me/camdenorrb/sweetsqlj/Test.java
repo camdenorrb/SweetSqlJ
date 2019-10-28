@@ -22,9 +22,12 @@ public class Test {
 		final Sql.Table<User> userTable = sql.table(User.class);
 		final Sql.CachedTable<User> userTableCached = sql.table(User.class).cached();
 
+		userTable.values("columnName");
 		userTable.contains(user);
 
-		userTable.values("columnName");
+
+		// This right here is why I'ma start working on SweetSqlK
+		// userTable.values(User::getName);
 
 		userTable.filter("name", "=", "coolCat69").forEach();
 
